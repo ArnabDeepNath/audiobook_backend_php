@@ -2,21 +2,27 @@
 require_once '../includes/initialize.php';
 require_once '../src/Audiobook.php';
 
+if (!isset($_GET['category_id'])) {
+    errorResponse('Category ID is required');
+}
+
 $database = new Database();
 $db = $database->connect();
 $audiobook = new Audiobook($db);
 
 // Get language from query parameter or default to 'en'
 $lang_code = isset($_GET['lang']) ? htmlspecialchars(strip_tags($_GET['lang'])) : 'en';
+$category_id = htmlspecialchars(strip_tags($_GET['category_id']));
 
-$result = $audiobook->read($lang_code);
+$result = $audiobook->getBooksByCategory($category_id);
 $num = $result->rowCount();
 
 if($num > 0) {
-    $audiobooks_arr = array();
+    $books_arr = array();
     while($row = $result->fetch(PDO::FETCH_ASSOC)) {
         extract($row);
-        $audiobook_item = array(            'id' => $id,
+        $book_item = array(
+            'id' => $id,
             'title' => $title,
             'description' => $description,
             'folder' => $folder,
@@ -42,9 +48,9 @@ if($num > 0) {
             'created_at' => $created_at,
             'updated_at' => $updated_at
         );
-        array_push($audiobooks_arr, $audiobook_item);
+        array_push($books_arr, $book_item);
     }
-    successResponse($audiobooks_arr);
+    successResponse($books_arr);
 } else {
     successResponse(array());
 }

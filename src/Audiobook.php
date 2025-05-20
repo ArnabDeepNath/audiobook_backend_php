@@ -120,13 +120,15 @@ $query = "INSERT INTO " . $this->table . "
             $this->conn->rollBack();
             return false;
         }
-    }    public function read() {
+    }    public function read($lang_code = 'en') {
         $query = "SELECT p.*, pt.title, pt.description 
                 FROM " . $this->table . " p
                 LEFT JOIN " . $this->translation_table . " pt 
-                    ON p.id = pt.for_id";
+                    ON p.id = pt.for_id
+                WHERE pt.lang_code = :lang_code";
 
         $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':lang_code', $lang_code);
         $stmt->execute();
         return $stmt;
     }
@@ -256,6 +258,19 @@ $query = "INSERT INTO " . $this->table . "
             $this->conn->rollBack();
             return false;
         }
+    }
+
+    public function getBooksByCategory($category_id) {
+        $query = "SELECT p.*, pt.title, pt.description 
+                FROM " . $this->table . " p
+                LEFT JOIN " . $this->translation_table . " pt 
+                    ON p.id = pt.for_id 
+                WHERE p.shop_categorie = :category_id";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':category_id', $category_id);
+        $stmt->execute();
+        return $stmt;
     }
 
     private function sanitizeProductFields() {
