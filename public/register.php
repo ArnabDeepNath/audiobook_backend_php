@@ -22,18 +22,13 @@ if(!$data || !isset($data->username) || !isset($data->email) || !isset($data->pa
 $user->username = $data->username;
 $user->email = $data->email;
 $user->password = $data->password;
-$user->name = $data->name ?? null;
-$user->phone = $data->phone ?? null;
 
 try {
     if($user->register()) {
         successResponse([
-            'message' => 'User registered successfully',
-            'user' => [
+            'message' => 'User registered successfully',            'user' => [
                 'username' => $user->username,
-                'email' => $user->email,
-                'name' => $user->name,
-                'phone' => $user->phone
+                'email' => $user->email
             ]
         ], 201);
     }

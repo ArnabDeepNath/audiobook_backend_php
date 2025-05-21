@@ -19,14 +19,16 @@ if(!$data || !isset($data->username) || !isset($data->password)) {
 }
 
 if($user->login($data->username, $data->password)) {
+    // Debug: Log the user object
+    error_log('Debug - User object after login: ' . print_r($user, true));
+    
     successResponse([
         'message' => 'Login successful',
         'user' => [
-            'id' => $user->id,
+            'id' => (int)$user->id,
             'username' => $user->username,
             'email' => $user->email,
-            'name' => $user->name,
-            'phone' => $user->phone
+            'role' => $user->role
         ]
     ]);
 } else {
