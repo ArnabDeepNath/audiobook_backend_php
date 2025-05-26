@@ -76,6 +76,49 @@ class User {
         }
 
         return false;
+    }    public function deleteAccount($username, $password) {
+        // Sanitize inputs
+        $username = htmlspecialchars(strip_tags($username));
+        $password = md5($password); // Using MD5 as specified in existing code
+
+        // First check if user exists
+        $checkUserQuery = "SELECT id FROM " . $this->table . " WHERE username = :username";
+        $checkStmt = $this->conn->prepare($checkUserQuery);
+        $checkStmt->bindParam(':username', $username);
+        $checkStmt->execute();
+
+        if($checkStmt->rowCount() === 0) {
+            error_log("Delete account failed: Username '$username' not found");
+            return ["success" => false, "message" => "Account not found"];
+        }
+
+        // Now check password
+        $query = "SELECT id FROM " . $this->table . " 
+                WHERE username = :username 
+                AND password = :password";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':password', $password);
+        $stmt->execute();
+
+        if($stmt->rowCount() === 0) {
+            error_log("Delete account failed: Invalid password for user '$username'");
+            return ["success" => false, "message" => "Invalid password"];
+        }
+
+        // User exists and password is correct, proceed with deletion
+        $deleteQuery = "DELETE FROM " . $this->table . " WHERE username = :username";
+        $deleteStmt = $this->conn->prepare($deleteQuery);
+        $deleteStmt->bindParam(':username', $username);
+
+        if($deleteStmt->execute()) {
+            error_log("Account deleted successfully: '$username'");
+            return ["success" => true, "message" => "Account deleted successfully"];
+        }
+
+        error_log("Delete account failed: Database error while deleting user '$username'");
+        return ["success" => false, "message" => "Database error"];
     }
 
     private function emailExists() {

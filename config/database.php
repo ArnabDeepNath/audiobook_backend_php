@@ -7,20 +7,19 @@ define('DB_NAME', 'audiobook_app');
 class Database {
     private $connection;
 
-    public function connect() {
-        $this->connection = null;
-        
-        try {
-            $this->connection = new PDO(
-                "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
-                DB_USER,
-                DB_PASS
-            );
-            $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        } catch(PDOException $e) {
-            echo "Connection Error: " . $e->getMessage();
+    public function getConnection() {
+        if ($this->connection === null) {
+            try {
+                $this->connection = new PDO(
+                    "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME,
+                    DB_USER,
+                    DB_PASS
+                );
+                $this->connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            } catch(PDOException $e) {
+                throw new Exception("Database Connection Error: " . $e->getMessage());
+            }
         }
-
         return $this->connection;
     }
 }

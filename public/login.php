@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $database = new Database();
-$db = $database->connect();
+$db = $database->getConnection();
 $user = new User($db);
 
 // Get posted data
