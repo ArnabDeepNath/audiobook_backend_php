@@ -3,7 +3,7 @@ class User {
     private $conn;
     private $table = 'users';    // User properties
     public $id;
-    public $username;
+    public $username; // Keep username for database compatibility
     public $email;
     public $password;
     public $role;
@@ -12,11 +12,9 @@ class User {
 
     public function __construct($db) {
         $this->conn = $db;
-    }
-
-    public function register() {
-        // Check if email or username already exists
-        if ($this->emailExists() || $this->usernameExists()) {
+    }    public function register() {
+        // Check if email already exists
+        if ($this->emailExists()) {
             return false;
         }        $query = "INSERT INTO " . $this->table . "
                 SET
@@ -28,12 +26,14 @@ class User {
         $stmt = $this->conn->prepare($query);
 
         // Sanitize input
-        $this->username = htmlspecialchars(strip_tags($this->username));
         $this->email = htmlspecialchars(strip_tags($this->email));
         $this->password = md5($this->password); // Using MD5 as specified
 
+        // Use email as username
+        $username = $this->email;
+
         // Bind parameters
-        $stmt->bindParam(':username', $this->username);
+        $stmt->bindParam(':username', $username);
         $stmt->bindParam(':email', $this->email);
         $stmt->bindParam(':password', $this->password);
 
@@ -42,33 +42,28 @@ class User {
             return true;
         }
         return false;
-    }
-
-    public function login($username, $password) {        // Query to check both username and email
+    }    public function login($email, $password) {        // Query to check email
         $query = "SELECT id, username, email, role 
                 FROM " . $this->table . " 
-                WHERE (username = :username OR email = :email) 
+                WHERE email = :email
                 AND password = :password 
                 LIMIT 1";
 
         $stmt = $this->conn->prepare($query);
 
         // Sanitize
-        $username = htmlspecialchars(strip_tags($username));
+        $email = htmlspecialchars(strip_tags($email));
         $password = md5($password);        // Bind parameters
-        $stmt->bindParam(':username', $username);
-        $stmt->bindParam(':email', $username); // Also bind as email since we check both
-        $stmt->bindParam(':password', $password);        $stmt->execute();
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':password', $password);$stmt->execute();
 
         if($stmt->rowCount() > 0) {
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             
             // Debug: Log the row data
-            error_log('Debug - Row data: ' . print_r($row, true));
-            
-            // Set properties
+            error_log('Debug - Row data: ' . print_r($row, true));            // Set properties
             $this->id = isset($row['id']) ? (int)$row['id'] : null;
-            $this->username = $row['username'];
+            $this->username = $row['username']; // Keep username property
             $this->email = $row['email'];
             $this->role = $row['role'];
 
@@ -76,48 +71,47 @@ class User {
         }
 
         return false;
-    }    public function deleteAccount($username, $password) {
+    }    public function deleteAccount($email, $password) {
+        error_log("Entering deleteAccount function");
         // Sanitize inputs
-        $username = htmlspecialchars(strip_tags($username));
+        $email = htmlspecialchars(strip_tags($email));
         $password = md5($password); // Using MD5 as specified in existing code
+        error_log("After sanitization - email: $email");
 
         // First check if user exists
-        $checkUserQuery = "SELECT id FROM " . $this->table . " WHERE username = :username";
+        $checkUserQuery = "SELECT id FROM " . $this->table . " WHERE email = :email";
+        error_log("User check query: $checkUserQuery");
         $checkStmt = $this->conn->prepare($checkUserQuery);
-        $checkStmt->bindParam(':username', $username);
-        $checkStmt->execute();
-
-        if($checkStmt->rowCount() === 0) {
-            error_log("Delete account failed: Username '$username' not found");
+        $checkStmt->bindParam(':email', $email);
+        $checkStmt->execute();        if($checkStmt->rowCount() === 0) {
+            error_log("Delete account failed: Email '$email' not found");
             return ["success" => false, "message" => "Account not found"];
         }
 
         // Now check password
         $query = "SELECT id FROM " . $this->table . " 
-                WHERE username = :username 
+                WHERE email = :email 
                 AND password = :password";
 
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':username', $username);
+        $stmt->bindParam(':email', $email);
         $stmt->bindParam(':password', $password);
         $stmt->execute();
 
         if($stmt->rowCount() === 0) {
-            error_log("Delete account failed: Invalid password for user '$username'");
+            error_log("Delete account failed: Invalid password for email '$email'");
             return ["success" => false, "message" => "Invalid password"];
         }
 
         // User exists and password is correct, proceed with deletion
-        $deleteQuery = "DELETE FROM " . $this->table . " WHERE username = :username";
+        $deleteQuery = "DELETE FROM " . $this->table . " WHERE email = :email";
         $deleteStmt = $this->conn->prepare($deleteQuery);
-        $deleteStmt->bindParam(':username', $username);
-
-        if($deleteStmt->execute()) {
-            error_log("Account deleted successfully: '$username'");
+        $deleteStmt->bindParam(':email', $email);        if($deleteStmt->execute()) {
+            error_log("Account deleted successfully: '$email'");
             return ["success" => true, "message" => "Account deleted successfully"];
         }
 
-        error_log("Delete account failed: Database error while deleting user '$username'");
+        error_log("Delete account failed: Database error while deleting user with email '$email'");
         return ["success" => false, "message" => "Database error"];
     }
 
@@ -130,16 +124,5 @@ class User {
         
         $stmt->execute();
         return $stmt->rowCount() > 0;
-    }
-
-    private function usernameExists() {
-        $query = "SELECT id FROM " . $this->table . " WHERE username = :username LIMIT 1";
-        $stmt = $this->conn->prepare($query);
-        
-        $this->username = htmlspecialchars(strip_tags($this->username));
-        $stmt->bindParam(':username', $this->username);
-        
-        $stmt->execute();
-        return $stmt->rowCount() > 0;
-    }
+    }    // Username method removed as per requirement
 }

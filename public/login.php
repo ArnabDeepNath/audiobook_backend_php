@@ -14,19 +14,18 @@ $user = new User($db);
 // Get posted data
 $data = json_decode(file_get_contents("php://input"));
 
-if(!$data || !isset($data->username) || !isset($data->password)) {
+if(!$data || !isset($data->email) || !isset($data->password)) {
     errorResponse('Missing required fields');
 }
 
-if($user->login($data->username, $data->password)) {
+// User will provide email, but backend still uses both username and email fields
+if($user->login($data->email, $data->password)) {
     // Debug: Log the user object
-    error_log('Debug - User object after login: ' . print_r($user, true));
-    
-    successResponse([
+    error_log('Debug - User object after login: ' . print_r($user, true));    successResponse([
         'message' => 'Login successful',
         'user' => [
             'id' => (int)$user->id,
-            'username' => $user->username,
+            'username' => $user->username, // Include username in response
             'email' => $user->email,
             'role' => $user->role
         ]

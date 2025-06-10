@@ -14,20 +14,18 @@ $user = new User($db);
 // Get posted data
 $data = json_decode(file_get_contents("php://input"));
 
-if(!$data || !isset($data->username) || !isset($data->email) || !isset($data->password)) {
+if(!$data || !isset($data->email) || !isset($data->password)) {
     errorResponse('Missing required fields');
 }
 
 // Set user properties
-$user->username = $data->username;
 $user->email = $data->email;
 $user->password = $data->password;
 
 try {
-    if($user->register()) {
-        successResponse([
+    if($user->register()) {        successResponse([
             'message' => 'User registered successfully',            'user' => [
-                'username' => $user->username,
+                'username' => $user->email, // Username is same as email
                 'email' => $user->email
             ]
         ], 201);
