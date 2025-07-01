@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $database = new Database();
-$db = $database->getConnection();
+$db = $database->connect();
 $user = new User($db);
 
 // Get posted data
